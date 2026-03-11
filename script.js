@@ -2,6 +2,20 @@
 const showFormBtn = document.getElementById('showFormBtn');
 const addAssignmentForm = document.getElementById('addAssignmentForm');
 
+// Enable audio playback on mobile by allowing user interaction first
+let audioEnabled = false;
+document.addEventListener('click', () => {
+  if (!audioEnabled) {
+    const audio = document.getElementById('alarmSound');
+    if (audio) {
+      // Create a silent audio playback to unlock audio on mobile
+      audio.play().catch(() => {});
+      audio.pause();
+      audioEnabled = true;
+    }
+  }
+});
+
 showFormBtn.addEventListener('click', () => {
   addAssignmentForm.classList.toggle('hidden');
   // Set minimum date to today
