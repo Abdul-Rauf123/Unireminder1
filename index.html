@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniReminder Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1>UniReminder Dashboard</h1>
+      <p class="subtitle">Manage your assignments efficiently</p>
+    </header>
+
+    <!-- Add Assignment Button -->
+    <div class="add-btn-container">
+      <button id="showFormBtn" class="btn btn-primary">Add Assignment</button>
+    </div>
+
+    <!-- Add Assignment Form (Hidden Initially) -->
+    <div id="addAssignmentForm" class="add-assignment-section hidden">
+      <h2>Add New Assignment</h2>
+      <div class="form-group">
+        <label for="assignmentName">Assignment Name</label>
+        <input type="text" id="assignmentName" placeholder="Enter assignment name">
+      </div>
+      <div class="form-group">
+        <label for="courseName">Course</label>
+        <input type="text" id="courseName" placeholder="Enter course name">
+      </div>
+      <div class="form-group">
+        <label for="assignmentDeadline">Deadline</label>
+        <input type="datetime-local" id="assignmentDeadline">
+      </div>
+      <div class="form-group">
+        <label for="level">Level</label>
+        <select id="level">
+          <option value="100">100</option>
+          <option value="200">200</option>
+          <option value="300">300</option>
+          <option value="400">400</option>
+          <option value="400">500</option>
+          <option value="400">600</option>
+          <option value="400">Post grafuate student</option>
+          <option value="400">lecturer</option>
+        </select>
+      </div>
+      <button id="addAssignmentBtn" class="btn btn-primary">Add Assignment</button>
+    </div>
+    <audio id="alarmSound" src="alarm.mp3.wav" preload="auto"></audio>
+
+    <!-- Assignment List -->
+    <div class="assignment-list-section">
+      <h2>Your Assignments</h2>
+      <table id="assignmentTable">
+        <thead>
+          <tr>
+            <th>Assignment</th>
+            <th>Course</th>
+            <th>Level</th>
+            <th>Deadline</th>
+            <th>Countdown</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Assignments will appear here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
