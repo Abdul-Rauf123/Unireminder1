@@ -33,22 +33,22 @@ showFormBtn.addEventListener('click', () => {
 const addAssignmentBtn = document.getElementById('addAssignmentBtn');
 const assignmentTableBody = document.querySelector('#assignmentTable tbody');
 
-// Create alarm audio element
-const alarmSound = document.getElementById('alarmSound');
-// loop will be toggled only while we want continuous beep
+// Create alarm audio element (CHANGED FROM const TO let to prevent reassignment errors)
+let alarmSound = document.getElementById('alarmSound'); 
 
 // manual stop flag used to prevent auto-replay after user stops it
 let alarmStoppedManually = false;
 // keep a timeout id for a playing alarm so we can cancel it
 let currentAlarmTimeout = null;
 
-// Stop alarm button (added to UI) - MUST be defined before use
+// Stop alarm button
 const stopAlarmBtn = document.getElementById('stopAlarmBtn');
 
 // hide stop button if table empty (page load or reload)
 if (stopAlarmBtn && assignmentTableBody && assignmentTableBody.children.length === 0) {
   stopAlarmBtn.classList.add('hidden');
 }
+
 // ensure button starts hidden and add click listener
 if (stopAlarmBtn) {
   stopAlarmBtn.classList.add('hidden');
@@ -62,7 +62,7 @@ if (stopAlarmBtn) {
       clearTimeout(currentAlarmTimeout);
       currentAlarmTimeout = null;
     }
-    alarmStoppedManually = true;             // remember user stopped it
+    alarmStoppedManually = true; // remember user stopped it
     stopAlarmBtn.classList.add('hidden');
   });
 }
@@ -72,14 +72,17 @@ function triggerAlarm() {
   if (!alarmSound) return;
   // if already playing, ignore
   if (!alarmSound.paused) return;
+  
   // don't use loop; instead, restart on end until timeout
   alarmSound.loop = false;
   alarmSound.play().catch(e => console.log('Audio play failed:', e));
+  
   // clear any existing timeout
   if (currentAlarmTimeout) {
     clearTimeout(currentAlarmTimeout);
     currentAlarmTimeout = null;
   }
+  
   // function to restart audio if still within 30s
   const restartIfNeeded = () => {
     if (currentAlarmTimeout) { // still active
@@ -87,8 +90,10 @@ function triggerAlarm() {
       alarmSound.play().catch(e => console.log('Audio play failed:', e));
     }
   };
+  
   // listen for end and restart
   alarmSound.addEventListener('ended', restartIfNeeded);
+  
   currentAlarmTimeout = setTimeout(() => {
     if (alarmSound) {
       alarmSound.pause();
@@ -104,7 +109,7 @@ function triggerAlarm() {
 }
 
 // Helper function to update countdown with alarm
-function updateCountdown(deadline, countdownCell) {
+function updateCountdown(deadline, row, countdownCell) {
   // Track which alarms have been triggered for this countdown
   let alarmAt5Min = false;
   let alarmAt3Min = false;
@@ -117,6 +122,7 @@ function updateCountdown(deadline, countdownCell) {
 
     if (diff <= 0) {
       countdownCell.textContent = "Deadline Passed";
+      countdownCell.style.color = "var(--danger)";
       clearInterval(interval);
       return;
     }
@@ -126,7 +132,12 @@ function updateCountdown(deadline, countdownCell) {
     const minutes = Math.floor((diff / (1000 * 60)) % 60);
     const seconds = Math.floor((diff / 1000) % 60);
 
-    countdownCell.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    // Beautiful time formatting 
+    countdownCell.textContent = 
+      (days > 0 ? `${days}d ` : '') + 
+      `${String(hours).padStart(2, '0')}h ` + 
+      `${String(minutes).padStart(2, '0')}m ` + 
+      `${String(seconds).padStart(2, '0')}s`;
 
     // Ignore alarms if user manually stopped them
     if (alarmStoppedManually) {
@@ -152,7 +163,7 @@ function updateCountdown(deadline, countdownCell) {
         // remove any 'ended' listeners by cloning the element
         const newAudio = alarmSound.cloneNode(true);
         alarmSound.parentNode.replaceChild(newAudio, alarmSound);
-        // update reference
+        // update reference properly since it's a let variable now
         alarmSound = newAudio;
       }
       if (currentAlarmTimeout) {
@@ -177,21 +188,16 @@ function updateCountdown(deadline, countdownCell) {
         triggerAlarm();
         alarmAt5Min = true;
       }
-      if (stopAlarmBtn) {
-        stopAlarmBtn.classList.remove('hidden');
-      }
+      if (stopAlarmBtn) stopAlarmBtn.classList.remove('hidden');
     }
     // SILENT PERIOD: After 5 min alarm until before 3 min alarm
     else if (totalSecondsRemaining <= 289 && totalSecondsRemaining > 180) {
-      // if we've already triggered an alarm that is still playing, let it finish
       if (!currentAlarmTimeout) {
         if (alarmSound && !alarmSound.paused) {
           alarmSound.pause();
           alarmSound.currentTime = 0;
         }
-        if (stopAlarmBtn) {
-          stopAlarmBtn.classList.add('hidden');
-        }
+        if (stopAlarmBtn) stopAlarmBtn.classList.add('hidden');
       }
     }
     // ALARM 2: Beep at 3 minutes (when time is between 180-170 seconds)
@@ -200,9 +206,7 @@ function updateCountdown(deadline, countdownCell) {
         triggerAlarm();
         alarmAt3Min = true;
       }
-      if (stopAlarmBtn) {
-        stopAlarmBtn.classList.remove('hidden');
-      }
+      if (stopAlarmBtn) stopAlarmBtn.classList.remove('hidden');
     }
     // SILENT PERIOD: Between after 3 min alarm and final 30 seconds
     else if (totalSecondsRemaining <= 169 && totalSecondsRemaining > 30) {
@@ -211,9 +215,7 @@ function updateCountdown(deadline, countdownCell) {
           alarmSound.pause();
           alarmSound.currentTime = 0;
         }
-        if (stopAlarmBtn) {
-          stopAlarmBtn.classList.add('hidden');
-        }
+        if (stopAlarmBtn) stopAlarmBtn.classList.add('hidden');
       }
     }
     // ALARM 3: Beep at final 30 seconds (0-30)
@@ -222,9 +224,8 @@ function updateCountdown(deadline, countdownCell) {
         triggerAlarm();
         alarmAt30Sec = true;
       }
-      if (stopAlarmBtn) {
-        stopAlarmBtn.classList.remove('hidden');
-      }
+      if (stopAlarmBtn) stopAlarmBtn.classList.remove('hidden');
+      countdownCell.style.color = "var(--danger)"; // Turn text red in last 30 seconds
     }
     // Stop all alarms when deadline passes
     else if (diff <= 0) {
@@ -232,11 +233,12 @@ function updateCountdown(deadline, countdownCell) {
         alarmSound.pause();
         alarmSound.currentTime = 0;
       }
-      if (stopAlarmBtn) {
-        stopAlarmBtn.classList.add('hidden');
-      }
+      if (stopAlarmBtn) stopAlarmBtn.classList.add('hidden');
     }
   }, 1000);
+  
+  // Attach the interval ID to the row so we can clear it upon deletion to prevent memory leaks
+  row.dataset.intervalId = interval;
 }
 
 addAssignmentBtn.addEventListener('click', () => {
@@ -250,19 +252,29 @@ addAssignmentBtn.addEventListener('click', () => {
     return;
   }
 
+  // Format date nicely
+  const formattedDate = new Date(deadline).toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric', 
+    hour: 'numeric', minute: '2-digit', hour12: true
+  });
+
   const row = document.createElement('tr');
-  const countdownCell = document.createElement('td');
 
   row.innerHTML = `
-    <td>${name}</td>
+    <td><strong>${name}</strong></td>
     <td>${course}</td>
-    <td>${level}</td>
-    <td>${new Date(deadline).toLocaleString()}</td>
+    <td><span style="background: var(--bg-color); padding: 4px 8px; border-radius: 6px; font-size: 0.85em; font-weight: 500;">${level}</span></td>
+    <td>${formattedDate}</td>
     <td></td>
     <td><button class="action-btn">Delete</button></td>
   `;
 
   row.querySelector('.action-btn').addEventListener('click', () => {
+    // Clear the specific interval for this row so it stops counting in the background
+    if (row.dataset.intervalId) {
+      clearInterval(row.dataset.intervalId);
+    }
+    
     // Stop alarm when deleting assignment
     if (alarmSound) {
       alarmSound.pause();
@@ -278,11 +290,11 @@ addAssignmentBtn.addEventListener('click', () => {
   });
 
   assignmentTableBody.appendChild(row);
-  updateCountdown(deadline, row.cells[4]);
+  updateCountdown(deadline, row, row.cells[4]);
 
-
-  // Clear form
+  // Clear form & hide it
   document.getElementById('assignmentName').value = '';
   document.getElementById('courseName').value = '';
   document.getElementById('assignmentDeadline').value = '';
+  addAssignmentForm.classList.add('hidden'); // automatically close form after saving
 });

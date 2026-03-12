@@ -4,74 +4,90 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UniReminder Dashboard</title>
+  <!-- Modern Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
     <!-- Header -->
     <header class="header">
-      <h1>UniReminder Dashboard</h1>
-      <p class="subtitle">Manage your assignments efficiently</p>
+      <h1>🎓 UniReminder</h1>
+      <p class="subtitle">Manage your assignments efficiently & never miss a deadline</p>
     </header>
 
-    <!-- Add Assignment Button -->
-    <div class="add-btn-container">
-      <button id="showFormBtn" class="btn btn-primary">Add Assignment</button>
+    <!-- Top Controls -->
+    <div class="top-controls">
+      <button id="showFormBtn" class="btn btn-primary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Add Assignment
+      </button>
+      
+      <!-- Button to manually stop the alarm -->
+      <button id="stopAlarmBtn" class="btn btn-danger pulse-anim hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+        Stop Alarm
+      </button>
     </div>
 
     <!-- Add Assignment Form (Hidden Initially) -->
-    <div id="addAssignmentForm" class="add-assignment-section hidden">
+    <div id="addAssignmentForm" class="card add-assignment-section hidden">
       <h2>Add New Assignment</h2>
-      <div class="form-group">
-        <label for="assignmentName">Assignment Name</label>
-        <input type="text" id="assignmentName" placeholder="Enter assignment name">
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="assignmentName">Assignment Name</label>
+          <input type="text" id="assignmentName" placeholder="e.g. Math Essay">
+        </div>
+        <div class="form-group">
+          <label for="courseName">Course</label>
+          <input type="text" id="courseName" placeholder="e.g. MAT101">
+        </div>
+        <div class="form-group">
+          <label for="assignmentDeadline">Deadline</label>
+          <input type="datetime-local" id="assignmentDeadline">
+        </div>
+        <div class="form-group">
+          <label for="level">Level</label>
+          <select id="level">
+            <option value="100">100</option>
+            <option value="200">200</option>
+            <option value="300">300</option>
+            <option value="400">400</option>
+            <option value="500">500</option>
+            <option value="600">600</option>
+            <option value="Postgraduate">Postgraduate Student</option>
+            <option value="Lecturer">Lecturer</option>
+          </select>
+        </div>
       </div>
-      <div class="form-group">
-        <label for="courseName">Course</label>
-        <input type="text" id="courseName" placeholder="Enter course name">
-      </div>
-      <div class="form-group">
-        <label for="assignmentDeadline">Deadline</label>
-        <input type="datetime-local" id="assignmentDeadline">
-      </div>
-      <div class="form-group">
-        <label for="level">Level</label>
-        <select id="level">
-          <option value="100">100</option>
-          <option value="200">200</option>
-          <option value="300">300</option>
-          <option value="400">400</option>
-          <option value="400">500</option>
-          <option value="400">600</option>
-          <option value="400">Post grafuate student</option>
-          <option value="400">lecturer</option>
-        </select>
-      </div>
-      <button id="addAssignmentBtn" class="btn btn-primary">Add Assignment</button>
+      
+      <button id="addAssignmentBtn" class="btn btn-primary btn-block">Save Assignment</button>
     </div>
+    
     <audio id="alarmSound" src="alarm.mp3.wav" preload="auto"></audio>
 
     <!-- Assignment List -->
-    <div class="assignment-list-section">
+    <div class="card assignment-list-section">
       <h2>Your Assignments</h2>
-      <table id="assignmentTable">
-        <thead>
-          <tr>
-            <th>Assignment</th>
-            <th>Course</th>
-            <th>Level</th>
-            <th>Deadline</th>
-            <th>Countdown</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Assignments will appear here -->
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table id="assignmentTable">
+          <thead>
+            <tr>
+              <th>Assignment</th>
+              <th>Course</th>
+              <th>Level</th>
+              <th>Deadline</th>
+              <th>Countdown</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Assignments will appear here -->
+          </tbody>
+        </table>
+      </div>
     </div>
-    <!-- Button to manually stop the alarm -->
-    <button id="stopAlarmBtn" class="btn btn-danger hidden">Stop Alarm</button>
   </div>
 
   <script src="script.js"></script>
