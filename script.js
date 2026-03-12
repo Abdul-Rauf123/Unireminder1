@@ -35,12 +35,12 @@ const assignmentTableBody = document.querySelector('#assignmentTable tbody');
 
 // Create alarm audio element
 const alarmSound = document.getElementById('alarmSound');
-if (alarmSound) {
-  alarmSound.loop = true; // Make it loop like a real alarm
-}
+// loop will be toggled only while we want continuous beep
 
 // manual stop flag used to prevent auto-replay after user stops it
 let alarmStoppedManually = false;
+// keep a timeout id for a playing alarm so we can cancel it
+let currentAlarmTimeout = null;
 
 // Stop alarm button (added to UI) - MUST be defined before use
 const stopAlarmBtn = document.getElementById('stopAlarmBtn');
@@ -56,10 +56,51 @@ if (stopAlarmBtn) {
     if (alarmSound) {
       alarmSound.pause();
       alarmSound.currentTime = 0;
+      alarmSound.loop = false;
+    }
+    if (currentAlarmTimeout) {
+      clearTimeout(currentAlarmTimeout);
+      currentAlarmTimeout = null;
     }
     alarmStoppedManually = true;             // remember user stopped it
     stopAlarmBtn.classList.add('hidden');
   });
+}
+
+// Helper function to play the alarm for a fixed duration (30s)
+function triggerAlarm() {
+  if (!alarmSound) return;
+  // if already playing, ignore
+  if (!alarmSound.paused) return;
+  // don't use loop; instead, restart on end until timeout
+  alarmSound.loop = false;
+  alarmSound.play().catch(e => console.log('Audio play failed:', e));
+  // clear any existing timeout
+  if (currentAlarmTimeout) {
+    clearTimeout(currentAlarmTimeout);
+    currentAlarmTimeout = null;
+  }
+  // function to restart audio if still within 30s
+  const restartIfNeeded = () => {
+    if (currentAlarmTimeout) { // still active
+      alarmSound.currentTime = 0;
+      alarmSound.play().catch(e => console.log('Audio play failed:', e));
+    }
+  };
+  // listen for end and restart
+  alarmSound.addEventListener('ended', restartIfNeeded);
+  currentAlarmTimeout = setTimeout(() => {
+    if (alarmSound) {
+      alarmSound.pause();
+      alarmSound.currentTime = 0;
+      // remove the listener
+      alarmSound.removeEventListener('ended', restartIfNeeded);
+    }
+    if (stopAlarmBtn) {
+      stopAlarmBtn.classList.add('hidden');
+    }
+    currentAlarmTimeout = null;
+  }, 30000); // stop after 30 seconds
 }
 
 // Helper function to update countdown with alarm
@@ -93,14 +134,30 @@ function updateCountdown(deadline, countdownCell) {
         alarmSound.pause();
         alarmSound.currentTime = 0;
       }
+      if (currentAlarmTimeout) {
+        clearTimeout(currentAlarmTimeout);
+        currentAlarmTimeout = null;
+      }
       return;
     }
 
     // Reset flags if we go back above 5 minutes (all alarms reset)
     if (days > 0 || hours > 0 || minutes > 5) {
-      if (alarmSound && !alarmSound.paused) {
-        alarmSound.pause();
-        alarmSound.currentTime = 0;
+      if (alarmSound) {
+        if (!alarmSound.paused) {
+          alarmSound.pause();
+          alarmSound.currentTime = 0;
+        }
+        alarmSound.loop = false;
+        // remove any 'ended' listeners by cloning the element
+        const newAudio = alarmSound.cloneNode(true);
+        alarmSound.parentNode.replaceChild(newAudio, alarmSound);
+        // update reference
+        alarmSound = newAudio;
+      }
+      if (currentAlarmTimeout) {
+        clearTimeout(currentAlarmTimeout);
+        currentAlarmTimeout = null;
       }
       if (stopAlarmBtn) {
         stopAlarmBtn.classList.add('hidden');
@@ -116,48 +173,53 @@ function updateCountdown(deadline, countdownCell) {
 
     // ALARM 1: Beep at 5 minutes (when time is between 300-290 seconds)
     if (totalSecondsRemaining <= 300 && totalSecondsRemaining > 290) {
-      if (!alarmAt5Min && alarmSound && alarmSound.paused) {
-        alarmSound.play().catch(e => console.log('Audio play failed:', e));
+      if (!alarmAt5Min) {
+        triggerAlarm();
         alarmAt5Min = true;
       }
       if (stopAlarmBtn) {
         stopAlarmBtn.classList.remove('hidden');
       }
     }
-    // SILENT PERIOD: Between after 5 min alarm (290s) and before 3 min alarm (180s)
+    // SILENT PERIOD: After 5 min alarm until before 3 min alarm
     else if (totalSecondsRemaining <= 289 && totalSecondsRemaining > 180) {
-      if (alarmSound && !alarmSound.paused) {
-        alarmSound.pause();
-        alarmSound.currentTime = 0;
-      }
-      if (stopAlarmBtn) {
-        stopAlarmBtn.classList.add('hidden');
+      // if we've already triggered an alarm that is still playing, let it finish
+      if (!currentAlarmTimeout) {
+        if (alarmSound && !alarmSound.paused) {
+          alarmSound.pause();
+          alarmSound.currentTime = 0;
+        }
+        if (stopAlarmBtn) {
+          stopAlarmBtn.classList.add('hidden');
+        }
       }
     }
     // ALARM 2: Beep at 3 minutes (when time is between 180-170 seconds)
     else if (totalSecondsRemaining <= 180 && totalSecondsRemaining > 170) {
-      if (!alarmAt3Min && alarmSound && alarmSound.paused) {
-        alarmSound.play().catch(e => console.log('Audio play failed:', e));
+      if (!alarmAt3Min) {
+        triggerAlarm();
         alarmAt3Min = true;
       }
       if (stopAlarmBtn) {
         stopAlarmBtn.classList.remove('hidden');
       }
     }
-    // SILENT PERIOD: Between after 3 min alarm (170s) and final 30 seconds (30s)
+    // SILENT PERIOD: Between after 3 min alarm and final 30 seconds
     else if (totalSecondsRemaining <= 169 && totalSecondsRemaining > 30) {
-      if (alarmSound && !alarmSound.paused) {
-        alarmSound.pause();
-        alarmSound.currentTime = 0;
-      }
-      if (stopAlarmBtn) {
-        stopAlarmBtn.classList.add('hidden');
+      if (!currentAlarmTimeout) {
+        if (alarmSound && !alarmSound.paused) {
+          alarmSound.pause();
+          alarmSound.currentTime = 0;
+        }
+        if (stopAlarmBtn) {
+          stopAlarmBtn.classList.add('hidden');
+        }
       }
     }
     // ALARM 3: Beep at final 30 seconds (0-30)
     else if (totalSecondsRemaining <= 30 && totalSecondsRemaining > 0) {
-      if (!alarmAt30Sec && alarmSound && alarmSound.paused) {
-        alarmSound.play().catch(e => console.log('Audio play failed:', e));
+      if (!alarmAt30Sec) {
+        triggerAlarm();
         alarmAt30Sec = true;
       }
       if (stopAlarmBtn) {
