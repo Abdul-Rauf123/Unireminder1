@@ -39,8 +39,36 @@ if (alarmSound) {
   alarmSound.loop = true; // Make it loop like a real alarm
 }
 
+// manual stop flag used to prevent auto-replay after user stops it
+let alarmStoppedManually = false;
+
+// Stop alarm button (added to UI) - MUST be defined before use
+const stopAlarmBtn = document.getElementById('stopAlarmBtn');
+
+// hide stop button if table empty (page load or reload)
+if (stopAlarmBtn && assignmentTableBody && assignmentTableBody.children.length === 0) {
+  stopAlarmBtn.classList.add('hidden');
+}
+// ensure button starts hidden and add click listener
+if (stopAlarmBtn) {
+  stopAlarmBtn.classList.add('hidden');
+  stopAlarmBtn.addEventListener('click', () => {
+    if (alarmSound) {
+      alarmSound.pause();
+      alarmSound.currentTime = 0;
+    }
+    alarmStoppedManually = true;             // remember user stopped it
+    stopAlarmBtn.classList.add('hidden');
+  });
+}
+
 // Helper function to update countdown with alarm
 function updateCountdown(deadline, countdownCell) {
+  // Track which alarms have been triggered for this countdown
+  let alarmAt5Min = false;
+  let alarmAt3Min = false;
+  let alarmAt30Sec = false;
+  
   const interval = setInterval(() => {
     const now = new Date();
     const end = new Date(deadline);
@@ -59,25 +87,93 @@ function updateCountdown(deadline, countdownCell) {
 
     countdownCell.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
 
-    // Play alarm if 30 seconds or less left
-    if (days === 0 && hours === 0 && minutes === 0 && seconds <= 30 && seconds > 0) {
-      if (alarmSound && alarmSound.paused) {
-        alarmSound.play().catch(e => console.log('Audio play failed:', e));
-      }
-    } else if (diff <= 0) {
-      // Stop alarm when deadline has passed
+    // Ignore alarms if user manually stopped them
+    if (alarmStoppedManually) {
       if (alarmSound) {
         alarmSound.pause();
         alarmSound.currentTime = 0;
       }
-    } else {
-      // Stop alarm if more than 30 seconds left
-      if (alarmSound) {
-        alarmSound.pause();
-        alarmSound.currentTime = 0;
-      }
+      return;
     }
 
+    // Reset flags if we go back above 5 minutes (all alarms reset)
+    if (days > 0 || hours > 0 || minutes > 5) {
+      if (alarmSound && !alarmSound.paused) {
+        alarmSound.pause();
+        alarmSound.currentTime = 0;
+      }
+      if (stopAlarmBtn) {
+        stopAlarmBtn.classList.add('hidden');
+      }
+      alarmAt5Min = false;
+      alarmAt3Min = false;
+      alarmAt30Sec = false;
+      return;
+    }
+
+    // Calculate total seconds remaining
+    const totalSecondsRemaining = (days * 24 * 60 * 60) + (hours * 60 * 60) + (minutes * 60) + seconds;
+
+    // ALARM 1: Beep at 5 minutes (when time is between 300-290 seconds)
+    if (totalSecondsRemaining <= 300 && totalSecondsRemaining > 290) {
+      if (!alarmAt5Min && alarmSound && alarmSound.paused) {
+        alarmSound.play().catch(e => console.log('Audio play failed:', e));
+        alarmAt5Min = true;
+      }
+      if (stopAlarmBtn) {
+        stopAlarmBtn.classList.remove('hidden');
+      }
+    }
+    // SILENT PERIOD: Between after 5 min alarm (290s) and before 3 min alarm (180s)
+    else if (totalSecondsRemaining <= 289 && totalSecondsRemaining > 180) {
+      if (alarmSound && !alarmSound.paused) {
+        alarmSound.pause();
+        alarmSound.currentTime = 0;
+      }
+      if (stopAlarmBtn) {
+        stopAlarmBtn.classList.add('hidden');
+      }
+    }
+    // ALARM 2: Beep at 3 minutes (when time is between 180-170 seconds)
+    else if (totalSecondsRemaining <= 180 && totalSecondsRemaining > 170) {
+      if (!alarmAt3Min && alarmSound && alarmSound.paused) {
+        alarmSound.play().catch(e => console.log('Audio play failed:', e));
+        alarmAt3Min = true;
+      }
+      if (stopAlarmBtn) {
+        stopAlarmBtn.classList.remove('hidden');
+      }
+    }
+    // SILENT PERIOD: Between after 3 min alarm (170s) and final 30 seconds (30s)
+    else if (totalSecondsRemaining <= 169 && totalSecondsRemaining > 30) {
+      if (alarmSound && !alarmSound.paused) {
+        alarmSound.pause();
+        alarmSound.currentTime = 0;
+      }
+      if (stopAlarmBtn) {
+        stopAlarmBtn.classList.add('hidden');
+      }
+    }
+    // ALARM 3: Beep at final 30 seconds (0-30)
+    else if (totalSecondsRemaining <= 30 && totalSecondsRemaining > 0) {
+      if (!alarmAt30Sec && alarmSound && alarmSound.paused) {
+        alarmSound.play().catch(e => console.log('Audio play failed:', e));
+        alarmAt30Sec = true;
+      }
+      if (stopAlarmBtn) {
+        stopAlarmBtn.classList.remove('hidden');
+      }
+    }
+    // Stop all alarms when deadline passes
+    else if (diff <= 0) {
+      if (alarmSound) {
+        alarmSound.pause();
+        alarmSound.currentTime = 0;
+      }
+      if (stopAlarmBtn) {
+        stopAlarmBtn.classList.add('hidden');
+      }
+    }
   }, 1000);
 }
 
@@ -110,11 +206,18 @@ addAssignmentBtn.addEventListener('click', () => {
       alarmSound.pause();
       alarmSound.currentTime = 0;
     }
+    alarmStoppedManually = false; // clear flag in case it was set
     row.remove();
+
+    // if table is now empty hide the stop button again
+    if (assignmentTableBody.children.length === 0 && stopAlarmBtn) {
+      stopAlarmBtn.classList.add('hidden');
+    }
   });
 
   assignmentTableBody.appendChild(row);
   updateCountdown(deadline, row.cells[4]);
+
 
   // Clear form
   document.getElementById('assignmentName').value = '';

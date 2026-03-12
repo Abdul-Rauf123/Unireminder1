@@ -52,6 +52,22 @@ body {
   background: #5560c1;
 }
 
+/* Danger-style button (used for stopping alarm) */
+.btn-danger {
+  background: #e74c3c;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #c0392b;
+}
+
+/* Centered block for stop alarm button */
+#stopAlarmBtn {
+  display: block;
+  margin: 20px auto;
+}
+
 .add-btn-container {
   text-align: center;
   margin-bottom: 20px;
